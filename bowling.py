@@ -1,13 +1,10 @@
-
-
-
 def get_value(char):
     possible_num_characters = '123456789'
     if char in possible_num_characters:
         for character in possible_num_characters:
             if char == character:
                 return int(char)
-    elif char == 'X' or char == 'x' or char == '/': #str format?
+    elif char == 'X' or char == 'x' or char == '/':
         return 10
     elif char == '-':
         return 0
@@ -15,46 +12,67 @@ def get_value(char):
         raise ValueError()
 
 
-def ten_is_the_value(actual_char, next_char, second_next_char):
-    result = 0
-    if actual_char == '/':
-        result += get_value(next_char)
-    elif actual_char == 'X' or actual_char == 'x':
-        if second_next_char == '/':
-            result += 10 # get_value(game[character+1]) + 10 - get_value(game[character+1])
-        else:
-            result += get_value(next_char) + get_value(second_next_char)
-    return result
+def extra_score_for_strike(second_next_knockdown, value_of_the_next, value_of_the_second_next, value_of_the_previous):
+    plus_score_for_strike = 0
+    spare = '/'
+    if second_next_knockdown == spare:
+        plus_score_for_strike += value_of_the_second_next
+    else:
+        plus_score_for_strike += value_of_the_next + value_of_the_second_next
+    return plus_score_for_strike
 
-def change_half_count_frame(frame, in_first_half, actual_char):
-    if not in_first_half:
-        frame += 1
-    in_first_half = not in_first_half # saját
-    if actual_char == 'X' or actual_char == 'x':
-        in_first_half = True
-        frame += 1
-    return frame, in_first_half
+
+def next_try_count_frame(turn, first_try_in_two_tries, actual_knockdown):
+    strike = 'x', 'X'
+    if not first_try_in_two_tries:
+        turn += 1
+    first_try_in_two_tries = not first_try_in_two_tries
+    if actual_knockdown in strike:
+        first_try_in_two_tries = True
+        turn += 1
+    return turn, first_try_in_two_tries
 
 
 def score(game):
-    result = 0
-    frame = 1
-    in_first_half = True
-    for character in range(len(game)):
-        actual_char = game[character]
-        previous_char = game[character-1]
-        value_of_the_previous = get_value(previous_char)
-        if actual_char == '/':
-            result += 10 - value_of_the_previous
-        else:
-            result += get_value(actual_char)
-        if frame < 10: # and get_value(actual_char) == 10: - saját rövidítés LEHET, H KELL
+    total_score = 0
+    turn = 1
+    turns_of_the_game = 10
+    first_try_in_two_tries = True
+    series_of_knockdowns = range(len(game))
+    spare = '/'
+    strike = 'x', 'X'
+    for index_of_knockdown in series_of_knockdowns:
+        actual_knockdown = game[index_of_knockdown]
+        previous_knockdown = game[index_of_knockdown-1]
+        value_of_the_actual = get_value(actual_knockdown)
+        value_of_the_previous = get_value(previous_knockdown)
+
+        total_score += value_of_the_actual
+        if actual_knockdown == spare:
+            total_score -= value_of_the_previous
+        if turn < turns_of_the_game:
             try:
-                result += ten_is_the_value(actual_char, game[character+1], game[character+2])
+                if actual_knockdown == spare:
+                    extra_score_for_spare = get_value(game[index_of_knockdown+1])
+                    total_score += extra_score_for_spare
+                if actual_knockdown in strike:
+                    total_score += extra_score_for_strike(game[index_of_knockdown+2], get_value(game[index_of_knockdown+1]), get_value(game[index_of_knockdown+2]), value_of_the_previous)
             except IndexError:
                 continue
-        frame, in_first_half = change_half_count_frame(frame, in_first_half, actual_char)
-    return result
-print(score('3/4x12'))
+        turn, first_try_in_two_tries = next_try_count_frame(turn, first_try_in_two_tries, actual_knockdown)
+    return total_score
+
+#print(score('3/4x12'))
+#print(score('xxxxxxxxxxxx'))
+#print(score('11111111112222222222'))
+print(score('X34-----------'))
+
+
+ 
+
+
+
+
+
 
 
